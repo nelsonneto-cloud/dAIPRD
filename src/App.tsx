@@ -2,9 +2,13 @@ import React, { useState, useRef, useEffect } from 'react';
 import { GoogleGenAI } from '@google/genai';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Send, Loader2, FileText, MessageSquare, Sparkles, LayoutTemplate, Target, Users, Palette } from 'lucide-react';
+import { Send, Loader2, FileText, MessageSquare, Sparkles, LayoutTemplate, Target, Users, Palette, Settings, Key, Save, X } from 'lucide-react';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const getAiClient = (key?: string) => {
+  const apiKey = key || process.env.GEMINI_API_KEY;
+  if (!apiKey) return null;
+  return new GoogleGenAI({ apiKey });
+};
 
 const systemInstruction = `
 # Persona e Objetivo
@@ -59,6 +63,10 @@ export default function App() {
   const [objective, setObjective] = useState('');
   const [audience, setAudience] = useState('');
 
+  const [userApiKey, setUserApiKey] = useState(() => localStorage.getItem('GEMINI_API_KEY') || '');
+  const [tempApiKey, setTempApiKey] = useState('');
+  const [showSettings, setShowSettings] = useState(false);
+
   const [messages, setMessages] = useState<{ role: 'user' | 'model', text: string }[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isChatting, setIsChatting] = useState(false);
@@ -71,6 +79,13 @@ export default function App() {
   const generatePRD = async () => {
     if (!projectName || !objective || !audience) {
       alert("Por favor, preencha todos os campos.");
+      return;
+    }
+
+    const client = getAiClient(userApiKey);
+    if (!client) {
+      setShowSettings(true);
+      alert("Por favor, configure sua chave de API da Gemini nas configurações.");
       return;
     }
 
@@ -90,7 +105,7 @@ Por favor, gere o PRD completo em formato Markdown conforme as instruções do s
     `;
 
     try {
-      const response = await ai.models.generateContentStream({
+      const response = await client.models.generateContentStream({
         model: 'gemini-3-flash-preview',
         contents: prompt,
         config: {
@@ -122,6 +137,13 @@ Por favor, gere o PRD completo em formato Markdown conforme as instruções do s
   const sendMessage = async () => {
     if (!inputMessage.trim() || isChatting) return;
 
+    const client = getAiClient(userApiKey);
+    if (!client) {
+      setShowSettings(true);
+      alert("Por favor, configure sua chave de API da Gemini nas configurações.");
+      return;
+    }
+
     const userMsg = inputMessage;
     setInputMessage('');
     
@@ -135,7 +157,7 @@ Por favor, gere o PRD completo em formato Markdown conforme as instruções do s
         parts: [{ text: msg.text }]
       }));
 
-      const response = await ai.models.generateContentStream({
+      const response = await client.models.generateContentStream({
         model: 'gemini-3-flash-preview',
         contents: contents,
         config: {
@@ -243,8 +265,59 @@ ${prdContent}
     URL.revokeObjectURL(url);
   };
 
+  const saveApiKey = () => {
+    localStorage.setItem('GEMINI_API_KEY', tempApiKey);
+    setUserApiKey(tempApiKey);
+    setShowSettings(false);
+  };
+
   return (
     <div className="min-h-screen bg-light-gray text-text-gray font-sans flex flex-col md:flex-row">
+      {showSettings && (
+        <div className="fixed inset-0 bg-[#3c3c3c]/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg w-full max-w-md shadow-lg overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-white">
+              <div className="flex items-center gap-2">
+                <Settings className="w-5 h-5 text-primary-red" />
+                <h2 className="text-lg font-display font-medium text-text-gray lowercase">configurações</h2>
+              </div>
+              <button 
+                onClick={() => setShowSettings(false)}
+                className="text-mid-gray hover:text-text-gray transition-colors"
+                title="Fechar"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-8 space-y-6">
+              <div>
+                <label className="flex items-center gap-2 text-sm font-medium text-text-gray mb-3 lowercase">
+                  <Key className="w-4 h-4 text-primary-red" />
+                  chave de api gemini
+                </label>
+                <input 
+                  type="password"
+                  className="w-full px-4 py-3 bg-light-gray border border-transparent rounded-sm focus:ring-2 focus:ring-primary-red focus:bg-white outline-none transition-all text-sm"
+                  placeholder="Cole sua chave aqui..."
+                  value={tempApiKey}
+                  onChange={e => setTempApiKey(e.target.value)}
+                />
+                <p className="text-[10px] text-mid-gray mt-3 lowercase">
+                  sua chave será salva localmente no navegador para não ser exposta no código.
+                </p>
+              </div>
+              <button 
+                onClick={saveApiKey}
+                className="w-full bg-primary-red hover:bg-sub-red-2 text-white font-medium py-4 px-6 rounded-md flex items-center justify-center gap-2 transition-all shadow-sm"
+              >
+                <Save className="w-4 h-4" />
+                <span className="lowercase">salvar configuração</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Sidebar Form */}
       <aside className="w-full md:w-1/3 lg:w-1/4 bg-white border-r border-gray-200 flex flex-col h-screen z-10">
         <div className="p-8 border-b border-gray-100">
@@ -296,7 +369,17 @@ ${prdContent}
           </div>
         </div>
         
-        <div className="p-8 border-t border-gray-100 bg-white">
+        <div className="p-8 border-t border-gray-100 bg-white space-y-3">
+          <button 
+            onClick={() => {
+              setTempApiKey(userApiKey);
+              setShowSettings(true);
+            }}
+            className="w-full border border-gray-200 hover:bg-light-gray text-text-gray font-medium py-3 px-6 rounded-md flex items-center justify-center gap-2 transition-all text-xs"
+          >
+            <Settings className="w-4 h-4 text-primary-red" />
+            <span className="lowercase">configurar api ia</span>
+          </button>
           <button 
             onClick={generatePRD}
             disabled={isGenerating || !projectName || !objective || !audience}
