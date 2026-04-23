@@ -1,0 +1,9 @@
+<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background is transparent -->
+  <!-- The stem of the 'd' -->
+  <rect x="62" y="10" width="22" height="80" fill="#333333" />
+  <!-- The body of the 'd' -->
+  <circle cx="42" cy="62" r="32" fill="#333333" />
+  <!-- The red inner circle -->
+  <circle cx="42" cy="62" r="18" fill="#ef463c" />
+</svg>

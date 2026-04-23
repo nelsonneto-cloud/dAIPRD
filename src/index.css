@@ -1,0 +1,25 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@300;400;500&display=swap');
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@theme {
+  /* Fonts */
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Outfit", sans-serif;
+
+  /* Colors - delaware brand */
+  --color-primary-red: #c42828;
+  --color-dot-red: #ef463c;
+  --color-sub-red-1: #ee7684;
+  --color-sub-red-2: #941914;
+  --color-teal: #72c4bf;
+  --color-purple: #ad9bcb;
+  --color-text-gray: #3c3c3c;
+  --color-mid-gray: #999999;
+  --color-light-gray: #f5f5f5;
+
+  /* Border Radii */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+}
