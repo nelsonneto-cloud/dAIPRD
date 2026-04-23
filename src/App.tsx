@@ -254,15 +254,27 @@ ${prdContent}
 *nós nos comprometemos. Nós entregamos.*
     `;
 
-    const blob = new Blob([template], { type: 'text/markdown' });
+    const blob = new Blob(["\ufeff", template], { type: 'text/markdown;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
+    
+    // Sanitize filename to be safe for all browsers
+    const safeProjectName = projectName.trim() 
+      ? projectName.normalize('NFD').replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/gi, '_').toLowerCase() 
+      : 'documento';
+    
+    a.style.display = 'none';
     a.href = url;
-    a.download = `PRD_${projectName.replace(/\s+/g, '_')}.md`;
+    a.download = `prd_${safeProjectName}.md`;
+    
     document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    
+    // Small delay before cleanup to ensure Chrome processes the download request
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 100);
   };
 
   const saveApiKey = () => {
